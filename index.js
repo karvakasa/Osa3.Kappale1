@@ -2,6 +2,24 @@ const express = require('express')
 const app = express()
 var morgan = require('morgan')
 
+const mongoose = require('mongoose')
+
+// ÄLÄ KOSKAAN TALLETA SALASANOJA githubiin!
+const password = process.argv[2]
+
+const url =
+`mongodb+srv://topias_uotila:${password}@cluster0-tqhkc.mongodb.net/person-app?retryWrites=true&w=majority`
+
+mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
+
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String,
+  id: Number,
+})
+
+const Person = mongoose.model('Person', personSchema)
+
 app.use(express.static('build'))
 
 app.use(express.json()) 
@@ -9,6 +27,7 @@ morgan.token('body', function (req, res ) { return JSON.stringify(req.body) })
 const cors = require('cors')
 
 app.use(cors())
+
 
 let persons = [
   { 
@@ -41,6 +60,7 @@ app.get('/', (req, res) => {
 app.get('/api/persons', (req, res) => {
   res.json(persons)
 })
+
 app.get('/api/info', (req, res) => {
   res.send('Phonebook has info for ' + persons.length + ' people <div></div>' + Date() )
 })
