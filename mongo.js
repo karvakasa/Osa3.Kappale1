@@ -15,34 +15,24 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 const personSchema = new mongoose.Schema({
   name: String,
   number: String,
-  id: Number,
 })
 
 const Person = mongoose.model('Person', personSchema)
 
-const generateId = () => {
-    persons = Person.find({})
-    const maxId = persons.length > 0
-      ? Math.max(...persons.map(n => n.id))
-      : 0
-    return maxId + 1
-  }
-
 if (process.argv.length>3){
-    const person = new Person({
-        name: process.argv[3],
-        number: process.argv[4],
-        id: generateId(),
-      })
-      
-      person.save().then(response => {
-        console.log('added ', process.argv[3], ' number ', process.argv[4], ' to phonebook');
-        mongoose.connection.close();
-      })
-}
 
+  const person = new Person({
+    name: process.argv[3],
+    number: process.argv[4] })
+  person.find({}).then(result => {
+    result.forEach(person => {
+      console.log(person)
+    })
+    mongoose.connection.close()
+  })
+}
 if (process.argv.length<4){
-Person.find({}).then(result => {
+  Person.find({}).then(result => {
     console.log('phonebook:')
     result.forEach(person => {
       console.log(person.name, person.number)
