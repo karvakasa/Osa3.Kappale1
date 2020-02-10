@@ -1,33 +1,15 @@
 const express = require('express')
 const app = express()
 var morgan = require('morgan')
-
-const mongoose = require('mongoose')
-
-// ÄLÄ KOSKAAN TALLETA SALASANOJA githubiin!
-const password = process.argv[2]
-
-const url =
-`mongodb+srv://topias_uotila:${password}@cluster0-tqhkc.mongodb.net/person-app?retryWrites=true&w=majority`
-
-mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
-
-const personSchema = new mongoose.Schema({
-  name: String,
-  number: String,
-  id: Number,
-})
-
-const Person = mongoose.model('Person', personSchema)
-
-app.use(express.static('build'))
-
-app.use(express.json()) 
-morgan.token('body', function (req, res ) { return JSON.stringify(req.body) })
 const cors = require('cors')
-
+require('dotenv').config()
 app.use(cors())
+app.use(express.static('build'))
+app.use(express.json())
+const Person = require('./models/person')
 
+
+morgan.token('body', function (req, res ) { return JSON.stringify(req.body) })
 
 let persons = [
   { 
@@ -58,20 +40,18 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/persons', (req, res) => {
-  res.json(persons)
+  Person.find({}).then(persons => {
+    res.json(persons.map(person => person.toJSON()))
+  });
 })
 
 app.get('/api/info', (req, res) => {
   res.send('Phonebook has info for ' + persons.length + ' people <div></div>' + Date() )
 })
 app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-  if (person) {
-    res.send(person.name + ' puh: ' + person.number)
-  } else {
-    res.status(404).end()
-  }
+  Person.findById(res.params.id).then(person => {
+    res.json(person.toJSON())
+  })
 })
 app.delete('/api/persons/:id', (req, res) => {
   const id = Number(req.params.id)
@@ -104,18 +84,19 @@ app.post('/api/persons', (req, res) => {
     return res.status(400).json({error: 'name must be uniikki'})
   }
   
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number,
     id: generateId()
-  }
-
-  persons = persons.concat(person)
-
-  res.json(person)
+  })
+  person.save().then(savedPerson => {
+    res.json(savedPerson.toJSON())
+  })
+  // persons = persons.concat(person)
+  // res.json(person)
 })
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
